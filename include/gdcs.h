@@ -28,20 +28,29 @@ class ComputeShader
     RID create_storage_buffer_uniform(const PackedByteArray &buffer, const int binding, const int set = 0);
     void update_storage_buffer_uniform(const RID rid, const PackedByteArray &data);
     PackedByteArray get_storage_buffer_uniform(RID rid) const;
+    Error get_storage_buffer_uniform_async(RID rid, const godot::Callable &p_callback) const;
     // template <typename T>
     // PackedByteArray struct_to_packed_byte_array(const T& obj);
 
     // 2d textures
-    Ref<RDTextureFormat> create_texture_format(const int width, const int height,
-                                               const RenderingDevice::DataFormat format);
+    Ref<RDTextureFormat> create_texture_format(
+        const int width, const int height, const RenderingDevice::DataFormat format,
+        const godot::BitField<godot::RenderingDevice::TextureUsageBits> usage_bits =
+            RenderingDevice::TEXTURE_USAGE_STORAGE_BIT | RenderingDevice::TEXTURE_USAGE_CAN_UPDATE_BIT |
+            RenderingDevice::TEXTURE_USAGE_CAN_COPY_FROM_BIT | RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT);
+
     RID create_image_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
                              const Ref<RDTextureView> &view, const int binding, const int set = 0);
 
+    RID create_texture_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
+                               const Ref<RDTextureView> &view, const int binding, const int set);
+
     PackedByteArray get_image_uniform_buffer(RID rid, const int layer = 0) const;
+    Error get_image_uniform_buffer_async(RID rid, const int layer, const godot::Callable &p_callback) const;
 
     // 2d layered textures
     RID create_layered_image_uniform(const std::vector<Ref<Image>> &image, const Ref<RDTextureFormat> &format,
-      const Ref<RDTextureView> &view, const int binding, const int set = 0);
+                                     const Ref<RDTextureView> &view, const int binding, const int set = 0);
 
     // 3d textures
     // todo
@@ -54,7 +63,7 @@ class ComputeShader
 
     bool check_ready() const;
     Ref<RDShaderSource> LoadShaderFile(const String &shader_path, const std::vector<String> &args = {});
-    void compute(const Vector3i groups);
+    void compute(const Vector3i groups, bool submitAndSync = true);
 
     RenderingDevice *get_rendering_device() const;
 

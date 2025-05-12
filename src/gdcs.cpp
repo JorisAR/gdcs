@@ -114,6 +114,10 @@ PackedByteArray ComputeShader::get_storage_buffer_uniform(RID rid) const
 {
     return _rd->buffer_get_data(rid);
 }
+Error ComputeShader::get_storage_buffer_uniform_async(RID rid, const godot::Callable &p_callback) const
+{
+    return _rd->buffer_get_data_async(rid, p_callback);
+}
 
 // template <typename T>
 // PackedByteArray ComputeShader::struct_to_packed_byte_array(const T &obj)
@@ -130,18 +134,18 @@ PackedByteArray ComputeShader::get_storage_buffer_uniform(RID rid) const
 
 //------------------------------------------------ TEXTURE 2D ------------------------------------------------
 
-Ref<RDTextureFormat> ComputeShader::create_texture_format(const int width, const int height,
-                                                          const RenderingDevice::DataFormat format)
+Ref<RDTextureFormat> ComputeShader::create_texture_format(
+    const int width, const int height, const RenderingDevice::DataFormat format,
+    const godot::BitField<godot::RenderingDevice::TextureUsageBits> usage_bits)
 {
     Ref<RDTextureFormat> result;
     result.instantiate();
     result->set_width(width);
     result->set_height(height);
     result->set_format(format);
-    
-    //bad usage bits, too permissive
-    result->set_usage_bits(RenderingDevice::TEXTURE_USAGE_STORAGE_BIT | RenderingDevice::TEXTURE_USAGE_CAN_UPDATE_BIT |
-                           RenderingDevice::TEXTURE_USAGE_CAN_COPY_FROM_BIT | RenderingDevice::TEXTURE_USAGE_SAMPLING_BIT);
+
+    // bad usage bits, too permissive
+    result->set_usage_bits(usage_bits);
     return result;
 }
 
@@ -166,9 +170,35 @@ RID ComputeShader::create_image_uniform(const Ref<Image> &image, const Ref<RDTex
     return rid;
 }
 
+RID ComputeShader::create_texture_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
+                                          const Ref<RDTextureView> &view, const int binding, const int set)
+{
+    TypedArray<PackedByteArray> data = {};
+    data.push_back(image->get_data());
+
+    RID rid = _rd->texture_create(format, view, data);
+    _buffers.push_back(rid);
+
+    Ref<RDUniform> uniform = memnew(RDUniform);
+    uniform->set_binding(binding);
+    uniform->set_uniform_type(RenderingDevice::UNIFORM_TYPE_TEXTURE);
+    uniform->add_id(rid);
+
+    // set binding
+    _bindings[set].push_back(uniform);
+    _uniforms_ready = false;
+
+    return rid;
+}
+
 PackedByteArray ComputeShader::get_image_uniform_buffer(RID rid, const int layer) const
 {
     return _rd->texture_get_data(rid, layer);
+}
+
+Error ComputeShader::get_image_uniform_buffer_async(RID rid, const int layer, const godot::Callable &p_callback) const
+{
+    return _rd->texture_get_data_async(rid, layer, p_callback);
 }
 
 RID ComputeShader::create_layered_image_uniform(const std::vector<Ref<Image>> &images,
@@ -234,7 +264,7 @@ void ComputeShader::finish_create_uniforms()
     _uniforms_ready = true;
 }
 
-void ComputeShader::compute(const Vector3i groups)
+void ComputeShader::compute(const Vector3i groups, bool submitAndSync)
 {
     if (!check_ready())
         return;
@@ -246,8 +276,11 @@ void ComputeShader::compute(const Vector3i groups)
     }
     _rd->compute_list_dispatch(list, groups.x, groups.y, groups.z);
     _rd->compute_list_end();
-    _rd->submit();
-    _rd->sync();
+    if (submitAndSync)
+    {
+        _rd->submit();
+        _rd->sync();
+    }
 }
 
 RenderingDevice *ComputeShader::get_rendering_device() const
@@ -288,7 +321,7 @@ String ComputeShader::LoadShaderString(const String &shader_path)
     if (file_txt.find("#[compute]") >= 0)
         file_txt = file_txt.erase(0, 10); // Remove header
 
-    //todo: remove all comments first
+    // todo: remove all comments first
 
     // Regular expression to find #include statements
     const String INCLUDE = "#include";
