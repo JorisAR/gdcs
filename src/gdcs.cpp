@@ -14,8 +14,10 @@
 
 ComputeShader::ComputeShader(const String &shader_path, RenderingDevice *rd, const std::vector<String> args)
 {
-    if (rd == nullptr)
+    if (rd == nullptr) {
         _rd = RenderingServer::get_singleton()->create_local_rendering_device();
+        _owns_rd = true;
+    }
     else
         _rd = rd;
 
@@ -83,7 +85,8 @@ ComputeShader::~ComputeShader()
             _rd->free_rid(rid);
     }
 
-    delete _rd;
+    if(_owns_rd)
+        delete _rd;
 }
 
 //------------------------------------------------ STORAGE BUFFER ------------------------------------------------

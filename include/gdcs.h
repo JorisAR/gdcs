@@ -70,6 +70,7 @@ class ComputeShader
   private:
     String LoadShaderString(const String &shader_path);
     RenderingDevice *_rd;
+    bool _owns_rd = false;
     RID _shader;
     RID _pipeline;
     std::vector<RID> _buffers;
