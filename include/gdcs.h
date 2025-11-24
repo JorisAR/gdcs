@@ -15,6 +15,7 @@
 #include <godot_cpp/variant/packed_float32_array.hpp>
 #include <godot_cpp/variant/typed_array.hpp>
 #include <type_traits>
+#include <unordered_map>
 
 using namespace godot;
 
