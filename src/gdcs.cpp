@@ -122,19 +122,6 @@ Error ComputeShader::get_storage_buffer_uniform_async(RID rid, const godot::Call
     return _rd->buffer_get_data_async(rid, p_callback);
 }
 
-// template <typename T>
-// PackedByteArray ComputeShader::struct_to_packed_byte_array(const T &obj)
-// {
-//     static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
-
-//     PackedByteArray byte_array;
-//     byte_array.resize(sizeof(T));
-
-//     std::memcpy(byte_array.ptrw(), &obj, sizeof(T));
-
-//     return byte_array;
-// }
-
 //------------------------------------------------ TEXTURE 2D ------------------------------------------------
 
 Ref<RDTextureFormat> ComputeShader::create_texture_format(
@@ -171,6 +158,22 @@ RID ComputeShader::create_image_uniform(const Ref<Image> &image, const Ref<RDTex
     _uniforms_ready = false;
 
     return rid;
+}
+
+Ref<RDUniform> ComputeShader::create_existing_image_uniform(const int binding, const int set)
+{
+    RID temp_rid;
+
+    Ref<RDUniform> uniform = memnew(RDUniform);
+    uniform->set_binding(binding);
+    uniform->set_uniform_type(RenderingDevice::UNIFORM_TYPE_IMAGE);
+    uniform->add_id(temp_rid);
+
+    // set binding
+    _bindings[set].push_back(uniform);
+    _uniforms_ready = false;
+
+    return uniform;
 }
 
 RID ComputeShader::create_texture_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,

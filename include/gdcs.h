@@ -43,6 +43,9 @@ class ComputeShader
     RID create_image_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
                              const Ref<RDTextureView> &view, const int binding, const int set = 0);
 
+    //create a a image uniform. you need to set the image data later manually by assigning a rid.
+    Ref<RDUniform> create_existing_image_uniform(const int binding, const int set);
+
     RID create_texture_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
                                const Ref<RDTextureView> &view, const int binding, const int set);
 
@@ -67,6 +70,17 @@ class ComputeShader
     void compute(const Vector3i groups, bool submitAndSync = true);
 
     RenderingDevice *get_rendering_device() const;
+
+
+    template <typename T>
+    inline static PackedByteArray struct_to_packed_byte_array(const T &obj)
+    {
+        static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
+        PackedByteArray byte_array;
+        byte_array.resize(sizeof(T));
+        std::memcpy(byte_array.ptrw(), &obj, sizeof(T));
+        return byte_array;
+    }
 
   private:
     String LoadShaderString(const String &shader_path);
