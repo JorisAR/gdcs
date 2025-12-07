@@ -43,8 +43,9 @@ class ComputeShader
     RID create_image_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
                              const Ref<RDTextureView> &view, const int binding, const int set = 0);
 
-    //create a a image uniform. you need to set the image data later manually by assigning a rid.
-    Ref<RDUniform> create_existing_image_uniform(const int binding, const int set);
+    //create a a temporary uniform. you need to set the data (RID) later. Also set a proper uniform type.
+    // Useful when capturing the color/depth buffers in a compositor effect for instance.
+    Ref<RDUniform> create_existing_temp_uniform(const int binding, const int set);
 
     RID create_texture_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
                                const Ref<RDTextureView> &view, const int binding, const int set);

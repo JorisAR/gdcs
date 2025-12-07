@@ -160,16 +160,13 @@ RID ComputeShader::create_image_uniform(const Ref<Image> &image, const Ref<RDTex
     return rid;
 }
 
-Ref<RDUniform> ComputeShader::create_existing_image_uniform(const int binding, const int set)
+
+Ref<RDUniform> ComputeShader::create_existing_temp_uniform(const int binding, const int set)
 {
     RID temp_rid;
-
     Ref<RDUniform> uniform = memnew(RDUniform);
     uniform->set_binding(binding);
-    uniform->set_uniform_type(RenderingDevice::UNIFORM_TYPE_IMAGE);
     uniform->add_id(temp_rid);
-
-    // set binding
     _bindings[set].push_back(uniform);
     _uniforms_ready = false;
 
