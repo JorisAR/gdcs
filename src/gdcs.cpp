@@ -12,9 +12,12 @@
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <regex>
 
+using namespace godot;
+
 ComputeShader::ComputeShader(const String &shader_path, RenderingDevice *rd, const std::vector<String> args)
 {
-    if (rd == nullptr) {
+    if (rd == nullptr)
+    {
         _rd = RenderingServer::get_singleton()->create_local_rendering_device();
         _owns_rd = true;
     }
@@ -85,7 +88,7 @@ ComputeShader::~ComputeShader()
             _rd->free_rid(rid);
     }
 
-    if(_owns_rd)
+    if (_owns_rd)
         delete _rd;
 }
 
@@ -159,7 +162,6 @@ RID ComputeShader::create_image_uniform(const Ref<Image> &image, const Ref<RDTex
 
     return rid;
 }
-
 
 Ref<RDUniform> ComputeShader::create_existing_temp_uniform(const int binding, const int set)
 {
@@ -242,7 +244,7 @@ RID ComputeShader::create_layered_image_uniform(const std::vector<Ref<Image>> &i
 void ComputeShader::add_existing_buffer(const RID rid, const RenderingDevice::UniformType uniform_type,
                                         const int binding, const int set)
 {
-    // todo check if binding already exists, then return and print error.
+    // todo check if binding already exists, else return and print error.
 
     // _buffers.push_back(rid);
     Ref<RDUniform> uniform = memnew(RDUniform);
@@ -255,16 +257,50 @@ void ComputeShader::add_existing_buffer(const RID rid, const RenderingDevice::Un
     _uniforms_ready = false;
 }
 
+void ComputeShader::replace_existing_rid(const RID new_rid, const RenderingDevice::UniformType uniform_type,
+                                         const int binding, const int set)
+{
+    for (const Ref<RDUniform> &uniform : _bindings[set])
+    {
+        if (uniform->get_binding() == binding)
+        {
+            if (uniform->get_uniform_type() != uniform_type)
+            {
+                UtilityFunctions::printerr("Cannot replace existing RID: uniform type mismatch.");
+                return;
+            }
+            uniform->clear_ids();
+            uniform->add_id(new_rid);
+            _uniforms_ready = false;
+            return;
+        }
+    }
+}
+
 void ComputeShader::finish_create_uniforms()
 {
     if (_uniforms_ready)
         return;
+
+    for (auto &pair : _sets)
+    {
+        if (pair.second.is_valid())
+        {
+            _rd->free_rid(pair.second);
+        }
+    }
+    _sets.clear();
     for (const auto &pair : _bindings)
     {
         auto set = _rd->uniform_set_create(pair.second, _shader, pair.first);
         _sets[pair.first] = set;
     }
     _uniforms_ready = true;
+}
+
+void ComputeShader::set_push_constant(const PackedByteArray &data)
+{
+    _push_constant_data = data;
 }
 
 void ComputeShader::compute(const Vector3i groups, bool submitAndSync)
@@ -277,6 +313,9 @@ void ComputeShader::compute(const Vector3i groups, bool submitAndSync)
     {
         _rd->compute_list_bind_uniform_set(list, pair.second, pair.first);
     }
+    if (_push_constant_data.size() > 0)
+        ;
+    _rd->compute_list_set_push_constant(list, _push_constant_data, _push_constant_data.size());
     _rd->compute_list_dispatch(list, groups.x, groups.y, groups.z);
     _rd->compute_list_end();
     if (submitAndSync)

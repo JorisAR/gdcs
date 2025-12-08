@@ -17,7 +17,8 @@
 #include <type_traits>
 #include <unordered_map>
 
-using namespace godot;
+namespace godot
+{
 
 class ComputeShader
 {
@@ -43,8 +44,8 @@ class ComputeShader
     RID create_image_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
                              const Ref<RDTextureView> &view, const int binding, const int set = 0);
 
-    //create a a temporary uniform. you need to set the data (RID) later. Also set a proper uniform type.
-    // Useful when capturing the color/depth buffers in a compositor effect for instance.
+    // create a a temporary uniform. you need to set the data (RID) later. Also set a proper uniform type.
+    //  Useful when capturing the color/depth buffers in a compositor effect for instance.
     Ref<RDUniform> create_existing_temp_uniform(const int binding, const int set);
 
     RID create_texture_uniform(const Ref<Image> &image, const Ref<RDTextureFormat> &format,
@@ -64,7 +65,12 @@ class ComputeShader
     void add_existing_buffer(const RID rid, const RenderingDevice::UniformType uniform_type, const int binding,
                              const int set = 0);
 
+    void replace_existing_rid(const RID new_rid, const RenderingDevice::UniformType uniform_type, const int binding,
+                              const int set = 0);
+
     void finish_create_uniforms();
+
+    void ComputeShader::set_push_constant(const PackedByteArray &data);
 
     bool check_ready() const;
     Ref<RDShaderSource> LoadShaderFile(const String &shader_path, const std::vector<String> &args = {});
@@ -72,9 +78,7 @@ class ComputeShader
 
     RenderingDevice *get_rendering_device() const;
 
-
-    template <typename T>
-    inline static PackedByteArray struct_to_packed_byte_array(const T &obj)
+    template <typename T> inline static PackedByteArray struct_to_packed_byte_array(const T &obj)
     {
         static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
         PackedByteArray byte_array;
@@ -89,6 +93,7 @@ class ComputeShader
     bool _owns_rd = false;
     RID _shader;
     RID _pipeline;
+    PackedByteArray _push_constant_data;
     std::vector<RID> _buffers;
     std::unordered_map<unsigned int, TypedArray<RDUniform>> _bindings;
     std::unordered_map<unsigned int, RID> _sets;
@@ -96,5 +101,5 @@ class ComputeShader
     bool _initialized = false;
     bool _uniforms_ready = false;
 };
-
+} // namespace godot
 #endif // GDCS_H
