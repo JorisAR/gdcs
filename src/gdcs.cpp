@@ -282,13 +282,13 @@ void ComputeShader::finish_create_uniforms()
     if (_uniforms_ready)
         return;
 
-    for (auto &pair : _sets)
-    {
-        if (pair.second.is_valid())
-        {
-            _rd->free_rid(pair.second);
-        }
-    }
+    // for (auto &pair : _sets)
+    // {
+    //     if (pair.second.is_valid())
+    //     {
+    //         _rd->free_rid(pair.second);
+    //     }
+    // }
     _sets.clear();
     for (const auto &pair : _bindings)
     {
