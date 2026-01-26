@@ -78,6 +78,9 @@ class ComputeShader
 
     RenderingDevice *get_rendering_device() const;
 
+    // -----------------------------------------------------------------------------
+    //    Static helpers
+    // -----------------------------------------------------------------------------
     template <typename T> inline static PackedByteArray struct_to_packed_byte_array(const T &obj)
     {
         static_assert(std::is_trivially_copyable<T>::value, "T must be trivially copyable");
@@ -85,6 +88,15 @@ class ComputeShader
         byte_array.resize(sizeof(T));
         std::memcpy(byte_array.ptrw(), &obj, sizeof(T));
         return byte_array;
+    }
+
+    static void recreate_storage_buffer(RenderingDevice *rd, RID &rid, const PackedByteArray &data)
+    {
+        if (rid.is_valid())
+        {
+            rd->free_rid(rid);
+        }
+        rid = rd->storage_buffer_create(data.size(), data);
     }
 
   private:
