@@ -11,6 +11,7 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <regex>
+#include <vector>
 
 using namespace godot;
 
